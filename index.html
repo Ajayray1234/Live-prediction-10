@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Big-Small AI Pattern Predictor</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #f0f0f0;
+      padding: 10px;
+      margin: 0;
+    }
+    .box {
+      background: #fff;
+      padding: 20px;
+      max-width: 100%;
+      margin: 20px auto;
+      border-radius: 12px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+    input, button {
+      padding: 12px;
+      margin: 8px 0;
+      width: 100%;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      font-size: 16px;
+      box-sizing: border-box;
+    }
+    button {
+      background: green;
+      color: white;
+      cursor: pointer;
+    }
+    button:hover {
+      background: darkgreen;
+    }
+    .result {
+      font-weight: bold;
+      margin-top: 20px;
+      font-size: 18px;
+    }
+  </style>
+</head>
+<body>
+<div class="box">
+  <h2>Big-Small AI Predictor</h2>
+  <input type="text" id="historyData" placeholder="Enter historical numbers (e.g. 9143589)">
+  <button onclick="initialize()">Initialize Tracker</button>
+  
+  <div id="liveSection" style="display:none;">
+    <br>
+    <input type="text" id="liveInput" placeholder="Enter new number (0-9)">
+    <button onclick="addInput()">Submit</button>
+    <div class="result" id="output"></div>
+  </div>
+</div>
+
+<script>
+  class Predictor {
+    constructor(history) {
+      this.history = history.split('').map(Number);
+      this.patterns = {};
+      this.recent = [];
+    }
+
+    getType(n) {
+      return n <= 4 ? "Small" : "Big";
+    }
+
+    trainPatterns() {
+      for (let i = 0; i < this.history.length - 3; i++) {
+        let key = this.history.slice(i, i+3).map(this.getType).join('-');
+        let next = this.history[i+3];
+        if (!this.patterns[key]) this.patterns[key] = [];
+        this.patterns[key].push(next);
+      }
+    }
+
+    addRecent(n) {
+      this.recent.push(n);
+      if (this.recent.length > 3) this.recent.shift();
+    }
+
+    predict() {
+      if (this.recent.length < 3) return "Need more input.";
+      let key = this.recent.map(this.getType).join('-');
+      let outcomes = this.patterns[key];
+      if (!outcomes || outcomes.length === 0) return "No pattern match.";
+      
+      let freq = {};
+      outcomes.forEach(x => freq[x] = (freq[x] || 0) + 1);
+      let next = Object.entries(freq).sort((a,b) => b[1]-a[1])[0][0];
+      return `Next: ${next} → ${this.getType(next)}`;
+    }
+  }
+
+  let tracker;
+
+  function initialize() {
+    let data = document.getElementById("historyData").value.trim();
+    if (!/^[0-9]+$/.test(data)) {
+      alert("Only 0-9 numbers allowed.");
+      return;
+    }
+    tracker = new Predictor(data);
+    tracker.trainPatterns();
+    document.getElementById("liveSection").style.display = "block";
+    document.getElementById("output").innerText = "Tracker initialized. Enter numbers.";
+  }
+
+  function addInput() {
+    let val = document.getElementById("liveInput").value.trim();
+    if (!/^[0-9]$/.test(val)) {
+      alert("Enter a single digit (0-9).");
+      return;
+    }
+    let num = parseInt(val);
+    tracker.addRecent(num);
+    let result = tracker.predict();
+    document.getElementById("output").innerText = result;
+  }
+</script>
+</body>
+</html>
